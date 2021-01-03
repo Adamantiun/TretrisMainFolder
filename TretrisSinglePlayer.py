@@ -9,7 +9,7 @@ l_tel= l_play+200
 h_tel=h_play+100
 
 x_top_e = (l_tel-l_play) // 2
-y_top_e = (l_tel-l_play)
+y_top_e = (h_tel-h_play)-30
 
 S = [['.....',
       '......',
@@ -117,6 +117,24 @@ formsl = [S, Z, I, O, J, L, T]
 coresl = [(0, 255, 0), (255, 0, 0), (0, 255, 255), (255, 255, 0), (255, 165, 0), (0, 0, 255), (128, 0, 128)]
 
 def grid_make():
-    
+    return([[(0,0,0) for i in range(10)] for j in range(20)])
 
-def grid_update():
+def grid_update(solidic):
+    gd=grid_make()
+    for y in range(20):
+        for x in range(10):
+            if (y,x) in solidic:
+                gd[y][x]=solidic[(y,x)]
+    return(gd)
+
+def game():
+    pygame.init()
+    tela = pygame.display.set_mode((l_tel,h_tel))
+    tela.fill((58,58,58))
+    pygame.draw.rect(tela, (0,0,0), ((x_top_e,y_top_e),(l_play,h_play)))
+    while True:
+        pygame.display.update()
+        for event in pygame.event.get():
+            if event.type == pygame.KEYDOWN:
+                pygame.quit()
+game()
