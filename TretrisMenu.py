@@ -9,7 +9,7 @@ def main_menu():
     # tela.fill(WHITE)
     tela.blit(bg, (0, 0))
     pygame.display.set_caption("Game")
-    tela.blit(pixf.render('Baixo Para Sair', True, Black), (100,100))
+    tela.blit(pixf.render('Clique Para Sair', True, Black), (100,100))
     while True:
         pygame.display.update()
         for event in pygame.event.get():
