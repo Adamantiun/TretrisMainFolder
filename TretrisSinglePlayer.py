@@ -118,7 +118,8 @@ formsl = [S, Z, I, O, J, L, T]
 coresl = [(0, 255, 0), (255, 0, 0), (0, 255, 255), (255, 255, 0), (255, 165, 0), (0, 0, 255), (128, 0, 128)]
 
 class piece:
-    def __init__(self, s, x=0, y=0, r=0):
+    def __init__(self, s, x=5, y=-1, r=0):
+        self.s=s
         self.x=x
         self.y=y
         self.rot=r
@@ -154,38 +155,128 @@ def draw_swap(tela,s=[['.....','.....','.....','.....','.....']]):
             else:
                 pygame.draw.rect(tela, coresl[formsl.index(s)], ((x_top_e-10-(blok_siz//2)*5+k*(blok_siz//2+lin) , y_top_e+(blok_siz//2+lin)*j),(blok_siz//2,blok_siz//2)))
                     
+def is_valid(gd,pç):
+    for j in range(5):
+        for i in range(5):
+            if pç.s[pç.rot][i][j]=='0' and not(pç.y+i-2<0):
+                if (pç.x+j-2)*(blok_siz+1)<0 or (pç.x+j-2)*(blok_siz+1)>=l_play:
+                    return False
+                if (pç.y+i-2)*(blok_siz+1)>=h_play:
+                    return False
+                if gd[pç.y+i-2][pç.x+j-2]!=(0,0,0):
+                    return False
+    return True
+
+# def desce_peça(grid,peça,waitl):
+#     peça.y+=1
+#     if not(is_valid(grid, peça)):
+#         peça.y-=1
+#         for i in range(5):
+#             for j in range(5):
+#                 if peça.s[peça.rot][i][j]=='0':
+#                     grid[peça.y+i-2][peça.x+j-2]=peça.clr
+#         peça=piece(waitl[0])
+#         waitl.pop(0)
+#         waitl.append(random.choice(formsl))
+        
             
 def game():
     pygame.init()
     tela = pygame.display.set_mode((l_tel,h_tel))
     tela.fill((58,58,58))
-    pygame.draw.rect(tela, (100,100,100), ((x_top_e,y_top_e),(l_play,h_play)))
-    # pygame.draw.rect(tela, (100,100,100), ((x_top_e+l_play+10,y_top_e),((blok_siz/2+lin)*5,(blok_siz/2+lin)*5)))
-    # pygame.draw.rect(tela, (100,100,100), ((x_top_e+l_play+10,y_top_e+(blok_siz/2+lin)*5+10),((blok_siz/2+lin)*5,(blok_siz/2+lin)*5)))
-    # pygame.draw.rect(tela, (100,100,100), ((x_top_e+l_play+10,y_top_e+(blok_siz/2+lin)*5*2+20),((blok_siz/2+lin)*5,(blok_siz/2+lin)*5)))
-    # pygame.draw.rect(tela, (100,100,100), ((x_top_e+l_play+10,y_top_e+(blok_siz/2+lin)*5*3+30),((blok_siz/2+lin)*5,(blok_siz/2+lin)*5)))
     grid=grid_make()
     waitl=[random.choice(formsl),random.choice(formsl),random.choice(formsl),random.choice(formsl)]
     draw_waiting(tela, waitl)
     draw_swap(tela)
     peça=piece(random.choice(formsl))
-    while True:
+    rlog=pygame.time.Clock()
+    t_queda=0.50
+    t_caindo=0
+    play=True
+    Swap_shape=[]
+    chgs=0
+    while play:
+        for i in range(len(grid)):
+            counter=0
+            for j in range(len(grid[i])):
+                if grid[i][j]!=(0,0,0):
+                    counter+=1
+            if counter==len(grid[i]):
+                grid.pop(i)
+                grid.insert(0,[(0,0,0) for x in range(10)])
+        t_caindo+=1
+        if t_caindo/1000>t_queda:
+            t_caindo=0
+            peça.y+=1
+            if not(is_valid(grid, peça)):
+                peça.y-=1
+                if peça.y==-1:
+                    play=False
+                for i in range(5):
+                    for j in range(5):
+                        if peça.s[peça.rot][i][j]=='0':
+                            grid[peça.y+i-2][peça.x+j-2]=peça.clr
+                peça=piece(waitl[0])
+                chgs=0
+                waitl.pop(0)
+                waitl.append(random.choice(formsl))
+                draw_waiting(tela, waitl)
+        rlog.tick()
         for i in range(len(grid)):
             for j in range(len(grid[i])):
                 pygame.draw.rect(tela, grid[i][j], ((x_top_e+j*(blok_siz+lin),y_top_e+i*(blok_siz+lin)),(blok_siz,blok_siz)))
         
+        for i in range(5):
+            for j in range(5):
+                if peça.s[peça.rot][i][j]=='0' and (peça.y+i-2)*(blok_siz+1)>=0:
+                    pygame.draw.rect(tela, peça.clr, ((x_top_e+(peça.x+j-2)*(blok_siz+1),y_top_e+(peça.y+i-2)*(blok_siz+1)), (blok_siz,blok_siz)))
         
         for event in pygame.event.get():
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_RIGHT:
                     peça.x+=1
+                    if not(is_valid(grid, peça)):
+                        peça.x-=1
                 if event.key == pygame.K_LEFT:
                     peça.x-=1
+                    if not(is_valid(grid, peça)):
+                        peça.x+=1
                 if event.key == pygame.K_DOWN:
                     peça.y+=1
+                    if not(is_valid(grid, peça)):
+                        peça.y-=1
+                        if peça.y==-1:
+                            play=False
+                        for i in range(5):
+                            for j in range(5):
+                                if peça.s[peça.rot][i][j]=='0':
+                                    grid[peça.y+i-2][peça.x+j-2]=peça.clr
+                        peça=piece(waitl[0])
+                        chgs=0
+                        waitl.pop(0)
+                        waitl.append(random.choice(formsl))
+                        draw_waiting(tela, waitl)
                 if event.key == pygame.K_UP:
                     peça.rot+=1
+                    if peça.rot==len(peça.s):
+                        peça.rot=0
+                    if not(is_valid(grid, peça)):
+                        peça.rot-=1
+                if event.key == pygame.K_c and chgs==0:
+                    if Swap_shape==[]:
+                        Swap_shape=peça.s
+                        peça=piece(waitl[0])
+                        waitl.pop(0)
+                        waitl.append(random.choice(formsl))
+                        draw_waiting(tela, waitl)
+                    else:
+                        temp=Swap_shape
+                        Swap_shape=peça.s
+                        peça=piece(temp)
+                    draw_swap(tela,Swap_shape)
+                    chgs+=1
             if event.type == pygame.QUIT:
-                pygame.quit()
+                play=False
         pygame.display.update()
+    pygame.quit()
 game()
