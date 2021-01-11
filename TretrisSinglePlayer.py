@@ -124,6 +124,16 @@ class piece:
         self.y=y
         self.rot=r
         self.clr=coresl[formsl.index(s)]
+        if s==I:
+            self.h=4
+        elif s==O:
+            self.h=2
+        else:
+            self.h=3
+    
+    def rotate(self, r=1):
+        self.rot+=r
+        self.rot=self.rot % len(self.s)
 
 def grid_make():
     return([[(0,0,0) for i in range(10)] for j in range(20)])
@@ -135,6 +145,13 @@ def grid_update(solidic):
             if (y,x) in solidic:
                 gd[y][x]=solidic[(y,x)]
     return(gd)
+
+def draw_score(tela,score):
+    s_font=pygame.font.SysFont("Calibri", blok_siz)
+    pygame.draw.rect(tela, (100,100,100), ((x_top_e-10-(blok_siz//2)*5,y_top_e+(blok_siz//2+lin)*5+10),((blok_siz//2+lin)*5,(blok_siz//2+lin)*5-10)))
+    tela.blit(s_font.render('Score:', True, (225,225,255)), (x_top_e-10-(blok_siz//2)*5+2,y_top_e+(blok_siz//2+lin)*6))
+    tela.blit(s_font.render(str(int(score)), True, (225,225,255)), (x_top_e-10-(blok_siz//2)*5+2,y_top_e+(blok_siz//2+lin)*8))
+    pass
 
 def draw_waiting(tela,wl):
     for i,s in enumerate(wl):
@@ -165,6 +182,9 @@ def is_valid(gd,pç):
                     return False
                 if gd[pç.y+i-2][pç.x+j-2]!=(0,0,0):
                     return False
+            if pç.s[pç.rot][i][j]=='0' and pç.y+i-2<0:
+                if (pç.x+j-2)*(blok_siz+1)<0 or (pç.x+j-2)*(blok_siz+1)>=l_play:
+                    return False
     return True
 
 # def desce_peça(grid,peça,waitl):
@@ -192,10 +212,24 @@ def game():
     rlog=pygame.time.Clock()
     t_queda=0.50
     t_caindo=0
+    t_insis=0
+    insis=False
     play=True
     Swap_shape=[]
     chgs=0
+    holup=False
+    lines_cleard=0
+    score=0
+    combin=False
+    combo=0
+    lvl=0
+    draw_score(tela, score)
     while play:
+        c_l_cleard=0
+        if lines_cleard>=5:
+            lines_cleard-=5
+            lvl+=1
+            t_queda=t_queda*0.9
         for i in range(len(grid)):
             counter=0
             for j in range(len(grid[i])):
@@ -204,23 +238,48 @@ def game():
             if counter==len(grid[i]):
                 grid.pop(i)
                 grid.insert(0,[(0,0,0) for x in range(10)])
+                lines_cleard+=1
+                c_l_cleard+=1
+                combin=True
+        if c_l_cleard>0:
+            if c_l_cleard==1:
+                score+=40*(lvl+1)*(1+0.5*combo)
+            elif c_l_cleard==2:
+                score+=100*(lvl+1)*(1+0.5*combo)
+            elif c_l_cleard==3:
+                score+=300*(lvl+1)*(1+0.5*combo)
+            else:
+                score+=300*c_l_cleard*(lvl+1)*(1+0.5*combo)
+            draw_score(tela, score)
+        if c_l_cleard>0:
+            combo+=1
+        if not(combin):
+            combo=0
         t_caindo+=1
+        if insis:
+            t_insis+=1
         if t_caindo/1000>t_queda:
             t_caindo=0
-            peça.y+=1
-            if not(is_valid(grid, peça)):
-                peça.y-=1
-                if peça.y==-1:
-                    play=False
-                for i in range(5):
-                    for j in range(5):
-                        if peça.s[peça.rot][i][j]=='0':
-                            grid[peça.y+i-2][peça.x+j-2]=peça.clr
-                peça=piece(waitl[0])
-                chgs=0
-                waitl.pop(0)
-                waitl.append(random.choice(formsl))
-                draw_waiting(tela, waitl)
+            if holup and t_insis<2500:
+                holup=False
+            else:
+                peça.y+=1
+                if not(is_valid(grid, peça)):
+                    peça.y-=1
+                    if peça.y==-1:
+                        play=False
+                    for i in range(5):
+                        for j in range(5):
+                            if peça.s[peça.rot][i][j]=='0':
+                                grid[peça.y+i-2][peça.x+j-2]=peça.clr
+                    peça=piece(waitl[0])
+                    chgs=0
+                    waitl.pop(0)
+                    waitl.append(random.choice(formsl))
+                    draw_waiting(tela, waitl)
+                    insis=False
+                    t_insis=0
+                    combin=False
         rlog.tick()
         for i in range(len(grid)):
             for j in range(len(grid[i])):
@@ -256,12 +315,42 @@ def game():
                         waitl.pop(0)
                         waitl.append(random.choice(formsl))
                         draw_waiting(tela, waitl)
+                        combin=False
                 if event.key == pygame.K_UP:
-                    peça.rot+=1
-                    if peça.rot==len(peça.s):
-                        peça.rot=0
+                    peça.rotate()
                     if not(is_valid(grid, peça)):
-                        peça.rot-=1
+                        tests=0
+                        found=False
+                        while tests<peça.h:
+                            peça.x+=1
+                            if is_valid(grid,peça):
+                                found=True
+                                break
+                            else:
+                                peça.x-=2
+                            if is_valid(grid,peça):
+                                found=True
+                                break
+                            else:
+                                peça.x+=1
+                            if peça.s==I:
+                                    peça.x+=2
+                                    if is_valid(grid,peça):
+                                        found=True
+                                        break
+                                    else:
+                                        peça.x-=2
+                            peça.y-=1
+                            if is_valid(grid,peça):
+                                found=True
+                                break
+                            tests+=1
+                        if not(found):
+                            peça.y+=tests
+                            peça.rotate(-1)
+                        else:
+                            holup=True
+                            insis=True
                 if event.key == pygame.K_c and chgs==0:
                     if Swap_shape==[]:
                         Swap_shape=peça.s
@@ -275,6 +364,22 @@ def game():
                         peça=piece(temp)
                     draw_swap(tela,Swap_shape)
                     chgs+=1
+                if event.key == pygame.K_SPACE:
+                    while is_valid(grid,peça):
+                        peça.y+=1
+                    peça.y-=1
+                    if peça.y==-1:
+                        play=False
+                    for i in range(5):
+                        for j in range(5):
+                            if peça.s[peça.rot][i][j]=='0':
+                                grid[peça.y+i-2][peça.x+j-2]=peça.clr
+                    peça=piece(waitl[0])
+                    chgs=0
+                    waitl.pop(0)
+                    waitl.append(random.choice(formsl))
+                    draw_waiting(tela, waitl)
+                    combin=False
             if event.type == pygame.QUIT:
                 play=False
         pygame.display.update()
