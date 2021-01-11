@@ -321,7 +321,7 @@ def game():
                     if not(is_valid(grid, peça)):
                         tests=0
                         found=False
-                        while tests<peça.h:
+                        while tests<peça.h and not(found):
                             peça.x+=1
                             if is_valid(grid,peça):
                                 found=True
@@ -340,11 +340,37 @@ def game():
                                         break
                                     else:
                                         peça.x-=2
+                            if tests==0:
+                                peça.y+=1
+                                if is_valid(grid, peça):
+                                    found=True
+                                    break
+                                else:
+                                    peça.x+=1
+                                    if is_valid(grid,peça):
+                                        found=True
+                                        break
+                                    else:
+                                        peça.x-=2
+                                        if is_valid(grid,peça):
+                                            found=True
+                                            break
+                                        else:
+                                            peça.x+=1
+                                            if peça.s==I:
+                                                peça.x+=2
+                                                if is_valid(grid,peça):
+                                                    found=True
+                                                    break
+                                                else:
+                                                    peça.x-=2
+                                            peça.y-=1
                             peça.y-=1
                             if is_valid(grid,peça):
                                 found=True
                                 break
                             tests+=1
+                        
                         if not(found):
                             peça.y+=tests
                             peça.rotate(-1)
