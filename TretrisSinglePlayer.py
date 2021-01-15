@@ -115,6 +115,7 @@ T = [['.....',
       '.....']]
 
 formsl = [S, Z, I, O, J, L, T]
+rformsl=formsl[:]
 coresl = [(0, 255, 0), (255, 0, 0), (0, 255, 255), (255, 255, 0), (255, 165, 0), (0, 0, 255), (128, 0, 128)]
 
 class piece:
@@ -137,14 +138,6 @@ class piece:
 
 def grid_make():
     return([[(0,0,0) for i in range(10)] for j in range(20)])
-
-def grid_update(solidic):
-    gd=grid_make()
-    for y in range(20):
-        for x in range(10):
-            if (y,x) in solidic:
-                gd[y][x]=solidic[(y,x)]
-    return(gd)
 
 def draw_score(tela,score):
     s_font=pygame.font.SysFont("Calibri", blok_siz)
@@ -187,28 +180,25 @@ def is_valid(gd,pç):
                     return False
     return True
 
-# def desce_peça(grid,peça,waitl):
-#     peça.y+=1
-#     if not(is_valid(grid, peça)):
-#         peça.y-=1
-#         for i in range(5):
-#             for j in range(5):
-#                 if peça.s[peça.rot][i][j]=='0':
-#                     grid[peça.y+i-2][peça.x+j-2]=peça.clr
-#         peça=piece(waitl[0])
-#         waitl.pop(0)
-#         waitl.append(random.choice(formsl))
+def rpç_choose(rformsl, flst=[]):
+    random.shuffle(rformsl)
+    r=random.choice(rformsl)
+    if r in flst:
+        if random.choice([1,2,3,4,5])<=2:
+            return(rpç_choose(rformsl, flst))
+    return(r)
         
             
 def game():
     pygame.init()
+    pygame.display.set_caption("Tretris")
     tela = pygame.display.set_mode((l_tel,h_tel))
     tela.fill((58,58,58))
     grid=grid_make()
-    waitl=[random.choice(formsl),random.choice(formsl),random.choice(formsl),random.choice(formsl)]
+    waitl=[rpç_choose(rformsl),rpç_choose(rformsl),rpç_choose(rformsl),rpç_choose(rformsl)]
     draw_waiting(tela, waitl)
     draw_swap(tela)
-    peça=piece(random.choice(formsl))
+    peça=piece(rpç_choose(rformsl, waitl))
     rlog=pygame.time.Clock()
     t_queda=0.50
     t_caindo=0
@@ -267,7 +257,8 @@ def game():
                 if not(is_valid(grid, peça)):
                     peça.y-=1
                     if peça.y==-1:
-                        play=False
+                        peça.y+=1
+                        break
                     for i in range(5):
                         for j in range(5):
                             if peça.s[peça.rot][i][j]=='0':
@@ -275,7 +266,7 @@ def game():
                     peça=piece(waitl[0])
                     chgs=0
                     waitl.pop(0)
-                    waitl.append(random.choice(formsl))
+                    waitl.append(rpç_choose(rformsl, waitl+[peça.s]))
                     draw_waiting(tela, waitl)
                     insis=False
                     t_insis=0
@@ -305,7 +296,8 @@ def game():
                     if not(is_valid(grid, peça)):
                         peça.y-=1
                         if peça.y==-1:
-                            play=False
+                            peça.y+=1
+                            break
                         for i in range(5):
                             for j in range(5):
                                 if peça.s[peça.rot][i][j]=='0':
@@ -313,7 +305,7 @@ def game():
                         peça=piece(waitl[0])
                         chgs=0
                         waitl.pop(0)
-                        waitl.append(random.choice(formsl))
+                        waitl.append(rpç_choose(rformsl, waitl+[peça.s]))
                         draw_waiting(tela, waitl)
                         combin=False
                 if event.key == pygame.K_UP:
@@ -382,7 +374,7 @@ def game():
                         Swap_shape=peça.s
                         peça=piece(waitl[0])
                         waitl.pop(0)
-                        waitl.append(random.choice(formsl))
+                        waitl.append(rpç_choose(rformsl, waitl+[peça.s]))
                         draw_waiting(tela, waitl)
                     else:
                         temp=Swap_shape
@@ -395,7 +387,8 @@ def game():
                         peça.y+=1
                     peça.y-=1
                     if peça.y==-1:
-                        play=False
+                        peça.y+=1
+                        break
                     for i in range(5):
                         for j in range(5):
                             if peça.s[peça.rot][i][j]=='0':
@@ -403,11 +396,26 @@ def game():
                     peça=piece(waitl[0])
                     chgs=0
                     waitl.pop(0)
-                    waitl.append(random.choice(formsl))
+                    waitl.append(rpç_choose(rformsl, waitl+[peça.s]))
                     draw_waiting(tela, waitl)
                     combin=False
             if event.type == pygame.QUIT:
                 play=False
         pygame.display.update()
     pygame.quit()
+    
+# def add_peça(tela,grid,peça,waitl,play,chgs):
+#     peça.y-=1
+#     if peça.y==-1:
+#         play=False
+#     for i in range(5):
+#         for j in range(5):
+#             if peça.s[peça.rot][i][j]=='0':
+#                 grid[peça.y+i-2][peça.x+j-2]=peça.clr
+#     peça=piece(waitl[0])
+#     chgs=0
+#     waitl.pop(0)
+#     waitl.append(random.choice(formsl))
+#     draw_waiting(tela, waitl)
+
 game()
